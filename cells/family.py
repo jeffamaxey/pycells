@@ -83,16 +83,14 @@ class Family(Model):
             cvar = getattr(self.kid_slots, attrname)
             # if it's a cell attribute, check to see if it's one of
             # the "special", non-overriding slots (eg kids)
-            if isinstance(cvar, CellAttr):
-                if cvar.kid_overrides:
-                    # and if it isn't, add it to the list of overrides
-                    override_attrnames.append(attrname)
-            # if it's a normal attribute, override only if it doesn't
-            # exist in the base class
-            else:
-                if attrname not in dir(cells.Family):
-                    override_attrnames.append(attrname)
-
+            if (
+                isinstance(cvar, CellAttr)
+                and cvar.kid_overrides
+                or not isinstance(cvar, CellAttr)
+                and attrname not in dir(cells.Family)
+            ):
+                # and if it isn't, add it to the list of overrides
+                override_attrnames.append(attrname)
         # now, do the overrides, bypassing normal getattrs
         for attrib_name in override_attrnames:
             _debug("overriding", attrib_name, "in", str(klass))
@@ -101,12 +99,7 @@ class Family(Model):
         # add any observers the kid_slots class defines:
         klass._observernames.update(self.kid_slots._observernames)
 
-        # XXX: should we memoize all that work here?
-
-        # finally, return an instance of that munged class with this obj set
-        # as its parent:
-        i = klass(parent=self)
-        return i
+        return klass(parent=self)
 
     def make_kid(self, klass):
         """
@@ -179,10 +172,7 @@ class Family(Model):
         or None if no such object exists.
         """
         # raise or just return None?
-        if self.parent:
-            if self.parent.parent:
-                return self.parent.parent
-        return None
+        return self.parent.parent if self.parent and self.parent.parent else None
 
 
 class FamilyTraversalError(Exception):

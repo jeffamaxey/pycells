@@ -164,7 +164,7 @@ class Observer(object):
         if self.last_ran == cells.cellenv.dp:   # never run twice in one DP
             _debug(self.func.__name__, "already ran in this dp")
             return
-        
+
         if self.attrib_name:
             if isinstance(self.attrib_name, str):
                 attrs = (self.attrib_name,)
@@ -184,28 +184,3 @@ class Observer(object):
             else:
                 _debug("Attribute name tests failed")
         return
-
-        if self.newvalue:
-            if isinstance(attr, Cell):
-                if not self.newvalue(attr.value):
-                    _debug(self.func.__name__,
-                          "function didn't match cell's new value")
-                    return
-            else:
-                if not self.newvalue(attr):
-                    _debug(self.func.__name__, "function didn't match non-cell")
-                    return
-
-        # since this is immediately post-value change, the last_value attr
-        # of the cell is still good.
-        if self.oldvalue:
-            if isinstance(attr, Cell):
-                if not self.oldvalue(attr.last_value):
-                    _debug(self.func.__name__,
-                           "function didn't match old value")
-                    return
-
-        # if we're here, it passed all the tests, so
-        _debug(self.func.__name__, "running")
-        self.func(model)
-        self.last_ran = cells.cellenv.dp

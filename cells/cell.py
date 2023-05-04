@@ -229,11 +229,10 @@ class Cell(object):
         if self.dp == cells.cellenv.dp:  # if this cell is current,
             _debug(self.name, "is current.")
             return False  # it's current.
-        if not cells.cellenv.curr_propogator:  # if the system isn't propogating,
-            if not self.lazy:  # and we're not lazy,
-                _debug(self.name, "sees system is not propogating; is current.")
-                self.dp = cells.cellenv.dp
-                return False  # this cell is current.
+        if not cells.cellenv.curr_propogator and not self.lazy:
+            _debug(self.name, "sees system is not propogating; is current.")
+            self.dp = cells.cellenv.dp
+            return False  # this cell is current.
 
         # otherwise, verify we're current: (by the above ifs, the
         # system is propogating and this cell is not current)
@@ -241,7 +240,7 @@ class Cell(object):
             _debug(self.name, "asking", cell.name, "to update")
             if cell.updatecell(self):  # if any called cell requires us,
                 _debug(self.name, "got recalc command from", cell.name)
-                if not self.dp == cells.cellenv.dp:
+                if self.dp != cells.cellenv.dp:
                     if self.run():  # we need to re-run
                         # the run changed the value of this cell, so
                         # propogate the change, starting at the cell which
@@ -465,16 +464,15 @@ class Cell(object):
 
     def add_calls(self, *calls_cells):
         """Appends the passed list of cells to this cell's calls list"""
-        self.calls.update(set([weakref.ref(cell) for cell in calls_cells]))
+        self.calls.update({weakref.ref(cell) for cell in calls_cells})
 
     def add_called_by(self, *cb_cells):
         """Appends the passed list of cells to this cell's called-by list"""
-        self.called_by.update(set([weakref.ref(cell) for cell in cb_cells]))
+        self.called_by.update({weakref.ref(cell) for cell in cb_cells})
 
     def remove_cb(self, *cb_cells):
         """Removes the passed list of cells from this cell's called-by list"""
-        self.called_by.difference_update(set(
-                [weakref.ref(cell) for cell in cb_cells]))
+        self.called_by.difference_update({weakref.ref(cell) for cell in cb_cells})
 
     def reset_calls(self):
         """Resets the calls list to empty"""
@@ -562,7 +560,7 @@ class InputCell(Cell):
 
         @raise InputCellRunError: Always raises
         """
-        raise InputCellRunError("attempt to run InputCell '" + self.name + "'")
+        raise InputCellRunError(f"attempt to run InputCell '{self.name}'")
 
 
 class RuleThenInputCell(Cell):

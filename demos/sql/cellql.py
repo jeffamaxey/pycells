@@ -131,13 +131,11 @@ class RowList(cells.ListCell):
 
     def _should_defer(self, name, argtuple):
         _debug(self.name, "wonders if it should defer a", name)
-        if cells.cellenv.curr_propogator:       # if a propogation is happening
+        if cells.cellenv.curr_propogator:   # if a propogation is happening
             _debug(self.name, "sees in-progress propogation; deferring set.")
             # defer the set
             cells.cellenv.deferred_sets.append((self, (name, argtuple)))
-	    return True
-	
-	return False
+            return True
 	
     # "get"-ish calls
     def count(self, v):
@@ -399,39 +397,34 @@ class Table(cells.Family):
 			
 @Table.observer(attrib=("ready", "create_table_string"))
 def rebuild_observer(model):    
-    if model.ready:
-	if not model.parent:
-	    return	# we don't rebuild if there's no DB
-			# (that is, if this is a row or only
-			# partially initialized)
-	
-	cur = model.parent._rawcon.cursor()
-	# Does the DB have this table?
-	try:
-	    s = "SELECT * FROM " + model.name + " LIMIT 1"
-	    cur.execute(s)
-	    # Yes.
-	    # Are the DB's table's columns in sync with the model's columns?
-	    if set([ _.name for _ in model.columns ]) == \
-		    set([ _[0] for _ in cur.description ]):
-		_debug(set([ _.name for _ in model.columns ]), "==",
-		       set([ _[0] for _ in cur.description ]))
-		# Yes. Don't rebuild.
-		return
-	except model.parent._rdbmsmodule.OperationalError:
-	    pass
-		
-	# TODO: Hrmph. I need to figure out how to verify each
-	# column's datatype in SQL is the same as what's in the Table
-	# model.
+    if not model.ready:
+        return
+    if not model.parent:
+        return	# we don't rebuild if there's no DB
+    cur = model.parent._rawcon.cursor()
+    	# Does the DB have this table?
+    try:
+        s = f"SELECT * FROM {model.name} LIMIT 1"
+        cur.execute(s)
+        	    # Yes.
+        	    # Are the DB's table's columns in sync with the model's columns?
+        if {_.name for _ in model.columns} == {_[0] for _ in cur.description}:
+            _debug({_.name for _ in model.columns}, "==", {_[0] for _ in cur.description})
+            # Yes. Don't rebuild.
+            return
+    except model.parent._rdbmsmodule.OperationalError:
+        pass
 
-	_debug("Rebuilding table", model.name)
-	cur = model.parent._rawcon.cursor()
-	s = model.create_table_string
-	if s:
-	    _debug("executing:", s)
-	    cur.execute(s)
-	    model.parent._rawcon.commit()
+    # TODO: Hrmph. I need to figure out how to verify each
+    # column's datatype in SQL is the same as what's in the Table
+    # model.
+
+    _debug("Rebuilding table", model.name)
+    cur = model.parent._rawcon.cursor()
+    if s := model.create_table_string:
+        _debug("executing:", s)
+        cur.execute(s)
+        model.parent._rawcon.commit()
 
 @Table.observer(attrib="rows")
 def insert_new_row(model):

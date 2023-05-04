@@ -126,8 +126,7 @@ class CellAttr(object):
 	account any overrides which exist in the passed owner model
 	"""
         newkwargs = self.kwargs.copy()
-        override = owner._initregistry.get(self.name)
-        if override:
+        if override := owner._initregistry.get(self.name):
             newkwargs.update(override)
 
         return newkwargs

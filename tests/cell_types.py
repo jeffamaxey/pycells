@@ -108,8 +108,6 @@ class CellTypeTests_OnceAskedLazy(unittest.TestCase):
 
     def test_1_EvaluateDuringMOInit(self):
         "Once-asked Lazy 1: Once-asked lazy cells are eval'd during MO init."
-        #TODO: Make a real test
-        pass
 
     def test_2_NoEvalOnPropogation(self):
         "Once-asked Lazy 2: Once-asked lazy cells are not evaluated when changes propogate to them"

@@ -62,13 +62,11 @@ class StorableAddressBook(WorkingAddressBook):
     def entries(self, prev):
         # These are written like RuleCells. First we'll look for an
         # extant entry file:
-        if not os.path.isfile(self.entry_file):
-            # And if it doesn't exist, we'll just return an empty dictionary.
-            return {}
-        else:
-            # If there is a file there, we'll load it into memory
-            # using the pickle module.
-            return pickle.load(open(self.entry_file, 'r'))
+        return (
+            pickle.load(open(self.entry_file, 'r'))
+            if os.path.isfile(self.entry_file)
+            else {}
+        )
         
 # What a RuleThenInputCell does is run the rule, which should generate
 # a value for the cell, then transform into an InputCell which may be

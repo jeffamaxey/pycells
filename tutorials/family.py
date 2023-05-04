@@ -43,7 +43,7 @@ class AddressBooks(cells.Family):
     def entries(self, prev):
         d = {}
         for model in self.kids:
-            d.update(model.entries)
+            d |= model.entries
 
         return d
 
@@ -53,12 +53,7 @@ class AddressBooks(cells.Family):
     # Let's also get all the address book names & indexes
     @cells.fun2cell()
     def booknames(self, prev):
-        d = {}
-        for model in self.kids:
-            # I'll use one of the Family convenience methods, position
-            d[model.name] = model.position()
-
-        return d
+        return {model.name: model.position() for model in self.kids}
 
 # And, so we can easily see what's happening I'll add some observers
 # to the AddressBooks model:

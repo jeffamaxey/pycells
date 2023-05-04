@@ -78,9 +78,7 @@ class Page(cells.Model):
     @cells.fun2cell()
     def dirty_path(self, prev):
         """The not-cleaned path from self.request"""
-        if not self.request:
-            return "/"
-        return self.request.path
+        return self.request.path if self.request else "/"
     
     @cells.fun2cell()
     def cleaned_path(self, prev):
@@ -165,10 +163,7 @@ class Page(cells.Model):
             return "templates/just_edit.tmpl"
         if self.is_directory:
             return "templates/directory.tmpl"
-        if self.is_static:
-            return "templates/static.tmpl"
-        else:
-            return "templates/full.tmpl"
+        return "templates/static.tmpl" if self.is_static else "templates/full.tmpl"
         
     @cells.fun2cell()
     def templatized(self, prev):
@@ -213,9 +208,9 @@ class Template(object):
     def render(self):
         """Actually applies the template"""
         rendered = ""
-        
-        # do resource insertion        
-        for line in open(self.template).readlines():
+
+        # do resource insertion
+        for line in open(self.template):
             # by looking for resource inclusion tags
             m = self.includetag1.search(line)
             if not m:
@@ -232,22 +227,20 @@ class Template(object):
                     replacement = self.page.raw_source
                 elif var == "__path__":
                     replacement = self.page.cleaned_path
-                
-                # otherwise, just pull from the page cache (which may build
-                # another Page)
+
                 else:
-                    req = Request(path="/" + var) # dummy request
+                    req = Request(path=f"/{var}")
                     replacement = self.cache[req].source
 
                 line = line[:m.span()[0]] + replacement + line[m.span()[1]:]
-                            
+
                 # look for more resource inclusion tags
                 m = self.includetag1.search(line)
                 if not m:
                     m = self.includetag2.search(line)
 
             rendered += line
-            
+
         return rendered
 
 # Make a page cache object

@@ -52,7 +52,7 @@ class FamilyTest(unittest.TestCase):
 
             f.make_kid(A)
 
-        self.failUnless(3 == len(f.kids))
+        self.failUnless(len(f.kids) == 3)
         self.failUnless(f.kids[0].model_name == "Eyy")
         self.failUnless(f.kids[1].model_name == "Bee")
         self.failUnless(f.kids[2].model_name == "See")

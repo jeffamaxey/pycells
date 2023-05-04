@@ -45,18 +45,18 @@ def debug(*msgs):
 
 
 class ModelMetatype(type):
-    def __init__(klass, name, bases, dikt):
+    def __init__(self, name, bases, dikt):
         # copy over inherited registries of observers and non-cell attributes
-        klass._observernames = set([])
-        klass._noncells = set([])
+        self._observernames = set([])
+        self._noncells = set([])
 
         for cls in bases:
             obsnames = getattr(cls, "_observernames", None)
             noncellnames = getattr(cls, "_noncells", None)
             if obsnames:
-                klass._observernames.update(obsnames)
+                self._observernames.update(obsnames)
             if noncellnames:
-                klass._noncells.update(noncellnames)
+                self._noncells.update(noncellnames)
 
         # do some work on various attributes of this class:
         for k, v in dikt.items():
@@ -67,11 +67,11 @@ class ModelMetatype(type):
 
             elif isinstance(v, ObserverAttr):
                 debug("registering observer", k)
-                klass._observernames.add(k)
+                self._observernames.add(k)
 
             else:  # non-cell, non-observer attrib
                 debug("registering noncell", k)
-                klass._noncells.add(k)
+                self._noncells.add(k)
 
 
 class Model(object, metaclass=ModelMetatype):
@@ -186,8 +186,7 @@ class Model(object, metaclass=ModelMetatype):
 
         # turn the observer name registry into a list of real Observers
         self._observers = []
-        for name in self._observernames:
-            self._observers.append(getattr(self, name))
+        self._observers.extend(getattr(self, name) for name in self._observernames)
         self._prioritize_observers()
 
         # do initial equalizations

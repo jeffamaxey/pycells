@@ -52,7 +52,7 @@ SMART_EMPHASIS = 1
 FN_BACKLINK_TEXT = "zz1337820767766393qq"
 # a template for html placeholders
 HTML_PLACEHOLDER_PREFIX = "qaodmasdkwaspemas"
-HTML_PLACEHOLDER = HTML_PLACEHOLDER_PREFIX + "%dajkqlsmdqpakldnzsdfls"
+HTML_PLACEHOLDER = f"{HTML_PLACEHOLDER_PREFIX}%dajkqlsmdqpakldnzsdfls"
 
 BLOCK_LEVEL_ELEMENTS = ['p', 'div', 'blockquote', 'pre', 'table',
                         'dl', 'ol', 'ul', 'script', 'noscript',
@@ -140,8 +140,8 @@ class Element :
                 child.unlink()
         self.childNodes = None
 
-    def setAttribute(self, attr, value) :
-        if not attr in self.attributes :
+    def setAttribute(self, attr, value):
+        if attr not in self.attributes:
             self.attributes.append(attr)
 
         self.attribute_values[attr] = value
@@ -184,11 +184,11 @@ class Element :
             buffer += "\n"
         elif self.nodeName in ['li'] :
             buffer += "\n "
-        buffer += "<" + self.nodeName
-        for attr in self.attributes :
+        buffer += f"<{self.nodeName}"
+        for attr in self.attributes:
             value = self.attribute_values[attr]
             value = self.doc.normalizeEntities(value)
-            buffer += ' %s="%s"' % (attr, value)
+            buffer += f' {attr}="{value}"'
         if self.childNodes or self.nodeName in ['blockquote']:
             buffer += ">"
             for child in self.childNodes :
@@ -197,8 +197,8 @@ class Element :
                 buffer += "\n"
             elif self.nodeName == 'li' :
                 buffer += "\n "
-            buffer += "</%s>" % self.nodeName
-        else :
+            buffer += f"</{self.nodeName}>"
+        else:
             buffer += "/>"
         if self.nodeName in ['p', 'li', 'ul', 'ol',
                              'h1', 'h2', 'h3', 'h4'] :
@@ -244,7 +244,7 @@ class EntityReference:
         pass
 
     def toxml(self):
-        return "&" + self.entity + ";"
+        return f"&{self.entity};"
 
 
 """
@@ -267,9 +267,9 @@ class HeaderPreprocessor :
        the nead for lookahead later.
     """
 
-    def run (self, lines) :
+    def run(self, lines):
 
-        for i in range(len(lines)) :
+        for i in range(len(lines)):
             if not lines[i] :
                 continue
 
@@ -278,15 +278,15 @@ class HeaderPreprocessor :
 
             if (i+1 <= len(lines)
                   and lines[i+1]
-                  and lines[i+1][0] in ['-', '=']) :
+                  and lines[i+1][0] in ['-', '=']):
 
                 underline = lines[i+1].strip()
 
-                if underline == "="*len(underline) :
-                    lines[i] = "# " + lines[i].strip()
+                if underline == "="*len(underline):
+                    lines[i] = f"# {lines[i].strip()}"
                     lines[i+1] = ""
-                elif underline == "-"*len(underline) :
-                    lines[i] = "## " + lines[i].strip()
+                elif underline == "-"*len(underline):
+                    lines[i] = f"## {lines[i].strip()}"
                     lines[i+1] = ""
 
         return lines
@@ -355,11 +355,10 @@ HTML_BLOCK_PREPROCESSOR = HtmlBlockPreprocessor()
 
 class ReferencePreprocessor :
 
-    def run (self, lines) :
+    def run(self, lines):
         new_text = [];
         for line in lines:
-            m = RE.regExp['reference-def'].match(line)
-            if m:
+            if m := RE.regExp['reference-def'].match(line):
                 id = m.group(2).strip().lower()
                 title = dequote(m.group(4).strip()) #.replace('"', "&quot;")
                 self.references[id] = (m.group(3), title)
@@ -426,11 +425,7 @@ EMPHASIS_RE = r'\*([^\*]*)\*'                    # *emphasis*
 STRONG_RE = r'\*\*(.*)\*\*'                      # **strong**
 STRONG_EM_RE = r'\*\*\*([^_]*)\*\*\*'            # ***strong***
 
-if SMART_EMPHASIS:
-    EMPHASIS_2_RE = r'(?<!\S)_(\S[^_]*)_'        # _emphasis_
-else :
-    EMPHASIS_2_RE = r'_([^_]*)_'                 # _emphasis_
-
+EMPHASIS_2_RE = r'(?<!\S)_(\S[^_]*)_' if SMART_EMPHASIS else r'_([^_]*)_'
 STRONG_2_RE = r'__([^_]*)__'                     # __strong__
 STRONG_EM_2_RE = r'___([^_]*)___'                # ___strong___
 
@@ -447,9 +442,9 @@ ENTITY_RE = r'(&[\#a-zA-Z0-9]*;)'                # &amp;
 
 class BasePattern:
 
-    def __init__ (self, pattern) :
+    def __init__(self, pattern):
         self.pattern = pattern
-        self.compiled_re = re.compile("^(.*)%s(.*)$" % pattern, re.DOTALL)
+        self.compiled_re = re.compile(f"^(.*){pattern}(.*)$", re.DOTALL)
 
     def getCompiledRegExp (self) :
         return self.compiled_re
@@ -543,12 +538,7 @@ class ImagePattern (BasePattern):
 class ReferencePattern (BasePattern):
 
     def handleMatch(self, m, doc):
-        if m.group(9) :
-            id = m.group(9).lower()
-        else :
-            # if we got something like "[Google][]"
-            # we'll use "google" as the id
-            id = m.group(2).lower()
+        id = m.group(9).lower() if m.group(9) else m.group(2).lower()
         if not self.references.has_key(id) : # ignore undefined refs
             return None
         href, title = self.references[id]
@@ -585,7 +575,7 @@ class AutolinkPattern (BasePattern):
 
 class AutomailPattern (BasePattern):
 
-    def handleMatch(self, m, doc) :
+    def handleMatch(self, m, doc):
         el = doc.createElement('a')
         email = m.group(2)
         if email.startswith("mailto:"):
@@ -593,7 +583,7 @@ class AutomailPattern (BasePattern):
         for letter in email:
             entity = doc.createEntityReference("#%d" % ord(letter))
             el.appendChild(entity)
-        mailto = "mailto:" + email
+        mailto = f"mailto:{email}"
         mailto = "".join(['&#%d;' % ord(letter) for letter in mailto])
         el.setAttribute('href', mailto)
         return el
@@ -666,7 +656,7 @@ class HtmlStash :
 
 class BlockGuru :
 
-    def _findHead(self, lines, fn, allowBlank=0) :
+    def _findHead(self, lines, fn, allowBlank=0):
 
         """Functional magic to help determine boundaries of indented
            blocks.
@@ -684,7 +674,7 @@ class BlockGuru :
 
         i = 0 # to keep track of where we are
 
-        for line in lines :
+        for line in lines:
 
             if not line.strip() and not allowBlank:
                 return items, lines[i:]
@@ -706,33 +696,26 @@ class BlockGuru :
 
                 part = fn(next)
 
-                if part :
-                    items.append("")
-                    continue
-                else :
+                if not part:
                     break # found end of the list
 
-            part = fn(line)
-
-            if part :
+                items.append("")
+                continue
+            if part := fn(line):
                 items.append(part)
                 i += 1
                 continue
-            else :
+            else:
                 return items, lines[i:]
-        else :
+        else:
             i += 1
 
         return items, lines[i:]
 
 
-    def detabbed_fn(self, line) :
+    def detabbed_fn(self, line):
         """ An auxiliary method to be passed to _findHead """
-        m = RE.regExp['tabbed'].match(line)
-        if m:
-            return m.group(4)
-        else :
-            return None
+        return m.group(4) if (m := RE.regExp['tabbed'].match(line)) else None
 
 
     def detectTabbed(self, lines) :
@@ -782,12 +765,11 @@ class CorePatterns :
         'quoted' :         r'> ?(.*)', # a quoted block ("> ...")
     }
 
-    def __init__ (self) :
+    def __init__(self):
 
         self.regExp = {}
-        for key in self.patterns.keys() :
-            self.regExp[key] = re.compile("^%s$" % self.patterns[key],
-                                          re.DOTALL)
+        for key in self.patterns.keys():
+            self.regExp[key] = re.compile(f"^{self.patterns[key]}$", re.DOTALL)
 
         self.regExp['containsline'] = re.compile(r'^([-]*)$|^([=]*)$', re.M)
 
@@ -923,7 +905,7 @@ class Markdown:
 
 
     def _processSection(self, parent_elem, lines,
-                        inList = 0, looseList = 0) :
+                        inList = 0, looseList = 0):
 
         """Process a section of a source document, looking for high
            level structural elements like lists, block quotes, code
@@ -948,9 +930,8 @@ class Markdown:
                       'quoted' : self._processQuote,
                       'tabbed' : self._processCodeBlock }
 
-        for regexp in ['ul', 'ol', 'quoted', 'tabbed'] :
-            m = RE.regExp[regexp].match(lines[0])
-            if m :
+        for regexp in ['ul', 'ol', 'quoted', 'tabbed']:
+            if m := RE.regExp[regexp].match(lines[0]):
                 processFn[regexp](parent_elem, lines, inList)
                 return
 
@@ -969,7 +950,7 @@ class Markdown:
         #     * Underneath we might have a sublist.
         #
 
-        if inList :
+        if inList:
 
             start, theRest = self._linesUntil(lines, (lambda line:
                              RE.regExp['ul'].match(line)
@@ -982,35 +963,37 @@ class Markdown:
                                  inList - 1, looseList = looseList)
 
 
-        else : # Ok, so it's just a simple block
+        else: # Ok, so it's just a simple block
 
             paragraph, theRest = self._linesUntil(lines, lambda line:
                                                  not line.strip())
 
-            if len(paragraph) and paragraph[0].startswith('#') :
-                m = RE.regExp['header'].match(paragraph[0])
-                if m :
+            if len(paragraph) and paragraph[0].startswith('#'):
+                if m := RE.regExp['header'].match(paragraph[0]):
                     level = len(m.group(1))
                     h = self.doc.createElement("h%d" % level)
                     parent_elem.appendChild(h)
                     for item in self._handleInlineWrapper2(m.group(2).strip()) :
                         h.appendChild(item)
-                else :
+                else:
                     message(CRITICAL, "We've got a problem header!")
 
-            elif paragraph :
+            elif paragraph:
 
                 list = self._handleInlineWrapper2("\n".join(paragraph))
 
-                if ( parent_elem.nodeName == 'li'
-                     and not (looseList or parent_elem.childNodes)):
+                if (
+                    parent_elem.nodeName == 'li'
+                    and not looseList
+                    and not parent_elem.childNodes
+                ):
 
                     #and not parent_elem.childNodes) :
                     # If this is the first paragraph inside "li", don't
                     # put <p> around it - append the paragraph bits directly
                     # onto parent_elem
                     el = parent_elem
-                else :
+                else:
                     # Otherwise make a "p" element
                     el = self.doc.createElement("p")
                     parent_elem.appendChild(el)
@@ -1034,7 +1017,7 @@ class Markdown:
                          listexpr='ol', tag = 'ol')
 
 
-    def _processList(self, parent_elem, lines, inList, listexpr, tag) :
+    def _processList(self, parent_elem, lines, inList, listexpr, tag):
         """Given a list of document lines starting with a list item,
            finds the end of the list, breaks it up, and recursively
            processes each list item and the remainder of the text file.
@@ -1055,14 +1038,12 @@ class Markdown:
 
         i = 0  # a counter to keep track of where we are
 
-        for line in lines :
+        loose = 0
+        for line in lines:
 
-            loose = 0
-            if not line.strip() :
+            if not line.strip():
                 # If we see a blank line, this _might_ be the end of the list
                 i += 1
-                loose = 1
-
                 # Find the next non-blank line
                 for j in range(i, len(lines)) :
                     if lines[j].strip() :
@@ -1072,24 +1053,23 @@ class Markdown:
                     # There is no more text => end of the list
                     break
 
-                # Check if the next non-blank line is still a part of the list
-                if ( RE.regExp['ul'].match(next) or
-                     RE.regExp['ol'].match(next) or 
-                     RE.regExp['tabbed'].match(next) ):
-                    # get rid of any white space in the line
-                    items[item].append(line.strip())
-                    looseList = loose or looseList
-                    continue
-                else :
+                if (
+                    not RE.regExp['ul'].match(next)
+                    and not RE.regExp['ol'].match(next)
+                    and not RE.regExp['tabbed'].match(next)
+                ):
                     break # found end of the list
 
+                # get rid of any white space in the line
+                items[item].append(line.strip())
+                looseList = 1 or looseList
+                continue
             # Now we need to detect list items (at the current level)
             # while also detabing child elements if necessary
 
             for expr in ['ul', 'ol', 'tabbed']:
 
-                m = RE.regExp[expr].match(line)
-                if m :
+                if m := RE.regExp[expr].match(line):
                     if expr in ['ul', 'ol'] :  # We are looking at a new item
                         if m.group(1) :
                             items.append([m.group(1)])
@@ -1099,10 +1079,10 @@ class Markdown:
 
                     i += 1
                     break
-            else :
+            else:
                 items[item].append(line)  # Just regular continuation
                 i += 1 # added on 2006.02.25
-        else :
+        else:
             i += 1
 
         # Add the dom elements
@@ -1131,7 +1111,7 @@ class Markdown:
             i += 1
         return lines[:i], lines[i:]
 
-    def _processQuote(self, parent_elem, lines, inList) :
+    def _processQuote(self, parent_elem, lines, inList):
         """Given a list of document lines starting with a quote finds
            the end of the quote, unindents it and recursively
            processes the body of the quote and the remainder of the
@@ -1144,14 +1124,13 @@ class Markdown:
 
         dequoted = []
         i = 0
-        for line in lines :
-            m = RE.regExp['quoted'].match(line)
-            if m :
+        for line in lines:
+            if m := RE.regExp['quoted'].match(line):
                 dequoted.append(m.group(1))
                 i += 1
-            else :
+            else:
                 break
-        else :
+        else:
             i += 1
 
         blockquote = self.doc.createElement('blockquote')
@@ -1186,7 +1165,7 @@ class Markdown:
         self._processSection(parent_elem, theRest, inList)
 
 
-    def _handleInlineWrapper2 (self, line) :
+    def _handleInlineWrapper2(self, line):
 
 
         parts = [line]
@@ -1194,7 +1173,7 @@ class Markdown:
         #if not(line):
         #    return [self.doc.createTextNode(' ')]
 
-        for pattern in self.inlinePatterns :
+        for pattern in self.inlinePatterns:
 
             #print
             #print self.inlinePatterns.index(pattern)
@@ -1202,21 +1181,17 @@ class Markdown:
             i = 0
 
             #print parts
-            while i < len(parts) :
+            while i < len(parts):
                 
                 x = parts[i]
                 #print i
-                if isinstance(x, (str, unicode)) :
-                    result = self._applyPattern(x, pattern)
-                    #print result
-                    #print result
-                    #print parts, i
-                    if result :
+                if isinstance(x, (str, unicode)):
+                    if result := self._applyPattern(x, pattern):
                         i -= 1
                         parts.remove(x)
                         for y in result :
                             parts.insert(i+1,y)
-                
+
                 i += 1
 
         for i in range(len(parts)) :
@@ -1261,13 +1236,12 @@ class Markdown:
         if not(line):
             return [self.doc.createTextNode(' ')]
 
-        for pattern in self.inlinePatterns :
-            list = self._applyPattern( line, pattern)
-            if list: return list
-
+        for pattern in self.inlinePatterns:
+            if list := self._applyPattern(line, pattern):
+                return list
         return [self.doc.createTextNode(line)]
 
-    def _applyPattern(self, line, pattern) :
+    def _applyPattern(self, line, pattern):
         """ Given a pattern name, this function checks if the line
         fits the pattern, creates the necessary elements, and returns
         back a list consisting of NanoDom elements and/or strings.
@@ -1279,24 +1253,13 @@ class Markdown:
                   pattern matches, None otherwise.
         """
 
-        # match the line to pattern's pre-compiled reg exp.
-        # if no match, move on.
-
-        m = pattern.getCompiledRegExp().match(line)
-        if not m :
-            return None
-
-        # if we got a match let the pattern make us a NanoDom node
-        # if it doesn't, move on
-        node = pattern.handleMatch(m, self.doc)
-
-        if node :
-            # Those are in the reverse order!
-            return ( m.groups()[-1], # the string to the left
-                     node,           # the new node
-                     m.group(1))     # the string to the right of the match
-
-        else :
+        if m := pattern.getCompiledRegExp().match(line):
+            return (
+                (m.groups()[-1], node, m.group(1))
+                if (node := pattern.handleMatch(m, self.doc))
+                else None
+            )
+        else:
             return None
 
     def __str__(self):
@@ -1385,18 +1348,17 @@ class FootnoteExtension :
         md.postprocessors.append(postprocessor)
 
 
-    def reset(self) :
+    def reset(self):
         # May be called by Markdown is state reset is desired
 
-        self.footnote_suffix = "-" + str(int(random.random()*1000000000))
+        self.footnote_suffix = f"-{int(random.random() * 1000000000)}"
         self.used_footnotes={}
         self.footnotes = {}
 
-    def findFootnotesPlaceholder(self, doc) :
+    def findFootnotesPlaceholder(self, doc):
         def findFootnotePlaceholderFn(node=None, indent=0):
-            if node.type == 'text':
-                if node.value.find(self.FN_PLACE_MARKER) > -1 :
-                    return True
+            if node.type == 'text' and node.value.find(self.FN_PLACE_MARKER) > -1:
+                return True
 
         fn_div_list = doc.find(findFootnotePlaceholderFn)
         if fn_div_list :
@@ -1412,7 +1374,7 @@ class FootnoteExtension :
     def makeFootnoteRefId(self, num) :
         return 'fnr%d%s' % (num, self.footnote_suffix)
 
-    def makeFootnotesDiv (self, doc) :
+    def makeFootnotesDiv(self, doc):
         """Creates the div with class='footnote' and populates it with
            the text of the footnotes.
 
@@ -1432,7 +1394,7 @@ class FootnoteExtension :
                      for id in self.footnotes.keys()]
         footnotes.sort()
 
-        for i, id in footnotes :
+        for i, id in footnotes:
             li = doc.createElement('li')
             li.setAttribute('id', self.makeFootnoteId(i))
 
@@ -1441,7 +1403,7 @@ class FootnoteExtension :
             #li.appendChild(doc.createTextNode(self.footnotes[id]))
 
             backlink = doc.createElement('a')
-            backlink.setAttribute('href', '#' + self.makeFootnoteRefId(i))
+            backlink.setAttribute('href', f'#{self.makeFootnoteRefId(i)}')
             backlink.setAttribute('class', 'footnoteBackLink')
             backlink.setAttribute('title',
                                   'Jump back to footnote %d in the text' % 1)
@@ -1512,16 +1474,15 @@ class FootnotePreprocessor :
         else :
             return lines
 
-    def _findFootnoteDefinition(self, lines) :
+    def _findFootnoteDefinition(self, lines):
         """Finds the first line of a footnote definition.
 
             @param lines: a list of lines of text
             @returns: the index of the line containing a footnote definition """
 
         counter = 0
-        for line in lines :
-            m = self.footnotes.DEF_RE.match(line)
-            if m :
+        for line in lines:
+            if m := self.footnotes.DEF_RE.match(line):
                 return counter, m.group(2), m.group(3)
             counter += 1
         return counter, None, None
@@ -1534,14 +1495,14 @@ class FootnotePattern (BasePattern) :
         BasePattern.__init__(self, pattern)
         self.footnotes = footnotes
 
-    def handleMatch(self, m, doc) :
+    def handleMatch(self, m, doc):
         sup = doc.createElement('sup')
         a = doc.createElement('a')
         sup.appendChild(a)
         id = m.group(2)
         num = self.footnotes.used_footnotes[id]
         sup.setAttribute('id', self.footnotes.makeFootnoteRefId(num))
-        a.setAttribute('href', '#' + self.footnotes.makeFootnoteId(num))
+        a.setAttribute('href', f'#{self.footnotes.makeFootnoteId(num)}')
         a.appendChild(doc.createTextNode(str(num)))
         return sup
 
@@ -1550,13 +1511,11 @@ class FootnotePostprocessor :
     def __init__ (self, footnotes) :
         self.footnotes = footnotes
 
-    def run(self, doc) :
-        footnotesDiv = self.footnotes.makeFootnotesDiv(doc)
-        if footnotesDiv :
-            fnPlaceholder = self.extension.findFootnotesPlaceholder(doc)
-            if fnPlaceholder :
+    def run(self, doc):
+        if footnotesDiv := self.footnotes.makeFootnotesDiv(doc):
+            if fnPlaceholder := self.extension.findFootnotesPlaceholder(doc):
                 fnPlaceholder.parent.replaceChild(fnPlaceholder, footnotesDiv)
-            else :
+            else:
                 doc.documentElement.appendChild(footnotesDiv)
 
 # ====================================================================
@@ -1622,7 +1581,7 @@ def get_vars(args):
     """process the command-line args received; return usable variables"""
     #firstly get the variables
 
-    message(VERBOSE, "in get_vars(), args: %s" % args) 
+    message(VERBOSE, f"in get_vars(), args: {args}") 
 
     if len(args) <= 1:
         option, inFile, outFile = (None, None, None)
@@ -1640,8 +1599,8 @@ def get_vars(args):
         #len(args) = 2
         #we have only one usable arg: might be an option or a file
         temp1 = args[1]
-        
-        message(VERBOSE, "our single arg is: %s" % str(temp1))
+
+        message(VERBOSE, f"our single arg is: {str(temp1)}")
 
         if temp1[0] == '-':
             #then we have an option 
@@ -1649,11 +1608,12 @@ def get_vars(args):
         else:
             #we have no option, so we must have inFile
             option, inFile, outFile = None, temp1, None
-    
-    message(VERBOSE,
-            "prior to validation, option: %s, inFile: %s, outFile: %s" %
-            (str(option), str(inFile), str(outFile),))
-    
+
+    message(
+        VERBOSE,
+        f"prior to validation, option: {str(option)}, inFile: {str(inFile)}, outFile: {str(outFile)}",
+    )
+
     return option, inFile, outFile
 
 
@@ -1701,7 +1661,7 @@ def validate_option(option) :
             return None
 
 
-def validate_input_file(inFile) :        
+def validate_input_file(inFile):
     """ Check if the input file is specified and exists.
 
         @return: valid input file path or None
@@ -1712,13 +1672,12 @@ def validate_input_file(inFile) :
                 "\nI need an input filename.\n")
         message(CRITICAL, USAGE)
         return None
-    
-        
+
+
     if os.access(inFile, os.R_OK):
         return inFile
-    else :
-        message(CRITICAL, "Sorry, I can't find input file %s" % str(inFile))
-        return None
+    message(CRITICAL, f"Sorry, I can't find input file {str(inFile)}")
+    return None
 
     
             

@@ -126,13 +126,13 @@ class SimpleModelTests(unittest.TestCase):
         self.failUnless(self.modified_a_ran)
 
     def test_hasName(self):
-        self.failUnless(self.M().model_name == None)
+        self.failUnless(self.M().model_name is None)
 
     def test_hasValue(self):
-        self.failUnless(self.M().model_value == None)
+        self.failUnless(self.M().model_value is None)
 
     def test_hasParent(self):
-        self.failUnless(self.M().parent == None)
+        self.failUnless(self.M().parent is None)
 
                 
         
@@ -186,7 +186,7 @@ class ObserverTests(unittest.TestCase):
         self.observerlog = []
         self.m.x = 2
 
-        self.failUnless(1 == self.observerlog.count("model"))
+        self.failUnless(self.observerlog.count("model") == 1)
 
         # but should not run during reads:
         self.observerlog = []
@@ -198,7 +198,7 @@ class ObserverTests(unittest.TestCase):
         # cell's observer should run once every time its value changes
         self.observerlog = []
         self.m.x = 2
-        self.failUnless(1 == self.observerlog.count("x"))
+        self.failUnless(self.observerlog.count("x") == 1)
         # but only when it's value *changes*
         self.observerlog = []
         self.m.x = 2
@@ -209,7 +209,7 @@ class ObserverTests(unittest.TestCase):
         # see above
         self.observerlog = []
         self.m.x = 2
-        self.failUnless(1 == self.observerlog.count("a"))
+        self.failUnless(self.observerlog.count("a") == 1)
         self.observerlog = []
         self.m.x = 2
         self.failIf("a" in self.observerlog)
@@ -219,7 +219,7 @@ class ObserverTests(unittest.TestCase):
 
     def test_NonCellObserver(self):
         "Verify non-cell observers run at init"
-        self.failUnless(1 == self.observerlog.count("offset"))
+        self.failUnless(self.observerlog.count("offset") == 1)
 
     def test_OldValueObserver(self):
         "Old value observers should run when the old value of the cell matches what the observer is looking for"
@@ -227,20 +227,20 @@ class ObserverTests(unittest.TestCase):
         # is looking for. So:
         self.observerlog = []
         self.m.x = 2.2
-        self.failUnless(1 == self.observerlog.count("oldval"))
+        self.failUnless(self.observerlog.count("oldval") == 1)
         self.observerlog = []
         self.m.x = 3.3          # x changes, but its old val was float
-        self.failUnless(1 == self.observerlog.count("oldval")) # a's was int
+        self.failUnless(self.observerlog.count("oldval") == 1)
 
     def test_NewValueObserver(self):
         "New value is just like old value, but new."
         # no, y'see, this one goes to 11...
         self.observerlog = []
         self.m.x = 3
-        self.failUnless(1 == self.observerlog.count("oldval"))
+        self.failUnless(self.observerlog.count("oldval") == 1)
         self.observerlog = []
         self.m.x = 2.3
-        self.failUnless(1 == self.observerlog.count("oldval"))
+        self.failUnless(self.observerlog.count("oldval") == 1)
 
     def test_ObserverMultipleObjects(self):
         "Observers should act correctly with multiple instances of a MO"
@@ -249,7 +249,7 @@ class ObserverTests(unittest.TestCase):
         self.observerlog = []
         a = self.M()                    # this should fire the model obs
         b = self.M()                    # as should this
-        self.failUnless(2 == self.observerlog.count("model"))
+        self.failUnless(self.observerlog.count("model") == 2)
         
     def test_ObserverInheritance(self):
         "Observers should inherit with few surprises."

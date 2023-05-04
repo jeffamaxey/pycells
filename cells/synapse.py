@@ -66,7 +66,7 @@ class Synapse(cell.Cell):
         # the owner Cell
         if name not in owner.synapse_space: # and if there isn't
             # make one in the owner
-            debug("building new synapse '" + name + "' in", str(owner))
+            debug(f"building new synapse '{name}' in", str(owner))
             owner.synapse_space[name] = cell.Cell.__new__(cls, owner, name=name, **kwargs)
 
         # finally, return the owner's synapse
